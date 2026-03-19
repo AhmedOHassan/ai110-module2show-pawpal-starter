@@ -105,11 +105,12 @@ and shown in a collapsible panel, so the owner always knows *why* a task was lef
 out.
 
 ## 📸 Demo
-<a href="app1.png" target="_blank">
-  <img src='app1.png' title='PawPal App1' width='' alt='PawPal App1' class='center-block' />
+
+<a href="app_1.png" target="_blank">
+  <img src='app_1.png' title='PawPal App1' width='' alt='PawPal App1' class='center-block' />
 </a>
 
-<a href="app2.png" target="_blank">
-  <img src='app2.png' title='PawPal App2' width='' alt='PawPal App2' class='center-block' />
+<a href="app_2.png" target="_blank">
+  <img src='app_2.png' title='PawPal App2' width='' alt='PawPal App2' class='center-block' />
 </a>
 
