@@ -2,10 +2,16 @@
 
 ## 1. System Design
 
+Core Actions:
+- Add owner and pet info
+- Add/Edit tasks
+- Generate a schedule
+
 **a. Initial design**
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
+
 
 **b. Design changes**
 
