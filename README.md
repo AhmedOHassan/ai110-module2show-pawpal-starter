@@ -105,7 +105,6 @@ and shown in a collapsible panel, so the owner always knows *why* a task was lef
 out.
 
 ## 📸 Demo
-
 <a href="app1.png" target="_blank">
   <img src='app1.png' title='PawPal App1' width='' alt='PawPal App1' class='center-block' />
 </a>
