@@ -3,6 +3,7 @@
 ## 1. System Design
 
 Core Actions:
+
 - Add owner and pet info
 - Add/Edit tasks
 - Generate a schedule
@@ -12,7 +13,7 @@ Core Actions:
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
-My initial UML design was pretty straightforward, I tried to model the app the same way you'd naturally think about pet care in real life. 
+My initial UML design was pretty straightforward, I tried to model the app the same way you'd naturally think about pet care in real life.
 
 I went with 4 classes:
 
@@ -49,6 +50,9 @@ The back-references were another thing I didn't plan for originally. A Task didn
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
+The conflict detection only flags tasks that share the same time label, "morning", "afternoon", or "evening", rather than checking whether their actual durations overlap on a real clock. So two morning tasks are always flagged as a conflict even if one takes 5 minutes and the other starts right after.
+
+For this app that's fine. Most pet owners don't schedule their day down to the minute, they think in rough blocks. Flagging anything in the same block and letting the owner decide is more practical than trying to calculate exact start and end times, which would require a lot more data the app doesn't have anyway.
 ---
 
 ## 3. AI Collaboration

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 
 
 # ---------------------------------------------------------------------------
@@ -17,6 +17,7 @@ class Task:
     frequency: str = "daily"   # How often this task recurs: "daily", "weekly", "as needed"
     is_completed: bool = False # Tracks whether this task has been done today
     pet_name: str = ""         # Back-reference: name of the pet this task belongs to
+    due_date: date = field(default_factory=date.today)  # Date this task is due; defaults to today
 
     def __post_init__(self) -> None:
         """Validate priority on creation to prevent silent scheduling bugs."""
@@ -27,6 +28,25 @@ class Task:
         """Mark this task as done for the day."""
         self.is_completed = True
 
+    def next_occurrence(self) -> Task:
+        """Return a new Task due on the next occurrence, or None if frequency is 'as needed'."""
+        if self.frequency == "daily":
+            next_due = self.due_date + timedelta(days=1)
+        elif self.frequency == "weekly":
+            next_due = self.due_date + timedelta(weeks=1)
+        else:
+            return None     # "as needed" tasks do not auto-recur
+
+        return Task(
+            name=self.name,
+            category=self.category,
+            duration_minutes=self.duration_minutes,
+            priority=self.priority,
+            preferred_time=self.preferred_time,
+            frequency=self.frequency,
+            due_date=next_due,
+        )
+
     def reset(self) -> None:
         """Reset completion status at the start of a new day."""
         self.is_completed = False
@@ -35,7 +55,7 @@ class Task:
         """Return a readable string representation for display and debugging."""
         status = "Done" if self.is_completed else "Pending"
         time_hint = f" [{self.preferred_time}]" if self.preferred_time else ""
-        return f"{self.name}{time_hint} - {self.duration_minutes} min | Priority {self.priority} | {status}"
+        return f"{self.name}{time_hint} - {self.duration_minutes} min | Priority {self.priority} | Due {self.due_date} | {status}"
 
 
 # ---------------------------------------------------------------------------
@@ -135,15 +155,73 @@ class Schedule:
                     f"[-] '{task.name}' ({task.pet_name}) skipped - needs {task.duration_minutes} min, only {time_remaining} min left"
                 )
 
-    def complete_task(self, task: Task) -> None:
-        """Mark a specific task as complete directly through the schedule."""
+    def complete_task(self, task: Task) -> Task | None:
+        """Mark a task complete and auto-schedule the next occurrence for daily/weekly tasks.
+
+        Returns the newly created Task if one was scheduled, otherwise None.
+        """
         task.mark_complete()
+
+        next_task = task.next_occurrence()
+        if next_task is None:
+            return None
+
+        # Find the pet that owns this task and register the next occurrence
+        for pet in self.pets:
+            if pet.name == task.pet_name:
+                pet.add_task(next_task)
+                break
+
+        return next_task
+
+    def detect_conflicts(self) -> list[str]:
+        """Return a list of warning strings for planned tasks that share the same time slot."""
+        warnings = []
+
+        # Group tasks by their preferred_time slot
+        slots: dict[str, list[Task]] = {}
+        for task in self.planned_tasks:
+            if not task.preferred_time:         # skip tasks with no time slot
+                continue
+            slots.setdefault(task.preferred_time, []).append(task)
+
+        # Any slot with more than one task is a conflict
+        for slot, tasks in slots.items():
+            if len(tasks) > 1:
+                names = ", ".join(f"'{t.name}' ({t.pet_name})" for t in tasks)
+                warnings.append(
+                    f"[!] Conflict in {slot} slot: {names} are all scheduled at the same time."
+                )
+
+        return warnings
 
     def reset_all_tasks(self) -> None:
         """Call reset() on every task across all pets to prepare for a new day."""
         for pet in self.pets:
             for task in pet.get_tasks():
                 task.reset()
+
+    def filter_tasks(self, completed: bool = None, pet_name: str = None) -> list:
+        """Return planned_tasks filtered by completion status and/or pet name."""
+        return [
+            task for task in self.planned_tasks
+            if (completed is None or task.is_completed == completed)
+            and (pet_name is None or task.pet_name == pet_name)
+        ]
+
+    def sort_by_time(self) -> list:
+        """Return planned_tasks sorted by preferred_time in HH:MM order, unscheduled tasks last."""
+        time_map = {
+            "morning":   "08:00",
+            "afternoon": "13:00",
+            "evening":   "18:00",
+            "":          "99:99",   # sentinel - sorts last
+        }
+
+        return sorted(
+            self.planned_tasks,
+            key=lambda task: time_map.get(task.preferred_time, "99:99")
+        )
 
     def get_total_duration(self) -> int:
         """Return the total time (in minutes) for all planned tasks."""
